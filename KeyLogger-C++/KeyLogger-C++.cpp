@@ -19,7 +19,7 @@
 // ---------------------------------------------------------------------------------------------
 
 // Whether or not to show the console window for debugging purposes
-#define isDebugging true
+#define isDebugging false
 
 // The path to the log file
 #define logFilePath "log.txt"
